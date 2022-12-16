@@ -21,7 +21,7 @@ func main() {
 	story, err := cyoa.JsonStory(f) //decode the json file using io.Reader and return a Story map with accessible struct values
 	checkErr(err)
 
-	h := cyoa.HttpHandler(story) //return makeshift http.Handler interface that implements ServeHttp function that allow us to handle requests and write story intro to response body
+	h := cyoa.HttpHandler(story) //return makeshift http.Handler interface that implements ServeHttp function that allow us to write story intro to initial response body and also handle future http requests
 	fmt.Printf("Starting the server on port: %d\n", *port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), h)) //listen for port 3000 and use h to handler http requests
 }

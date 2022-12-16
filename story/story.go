@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"html/template"
 	"io"
+	"log"
 	"net/http"
+	"strings"
 )
 
 var tpl *template.Template
@@ -46,10 +48,22 @@ type handler struct {
 }
 
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	err := tpl.Execute(w, h.s["intro"]) //http.ResponseWriter is an io.Writer => can use it in Template.Execute to write to response body
-	if err != nil {
-		panic(err)
+	path := strings.TrimSpace(r.URL.Path) //get the URL Path of the http requests with any whitespaces removed
+	if path == "" || path == "/" {
+		path = "/intro" //if response has no URL path, assume user is starting story from scratch (restart from intro)
 	}
+	path = path[1:] //remove the '/' in path
+
+	//check if path name exists in the JSON file (e.g. '/new-york' would be a valid path URL as 'new-york' is a key to a Chapter in Story map)
+	if chapter, ok := h.s[path]; ok {
+		err := tpl.Execute(w, chapter) //http.ResponseWriter is an io.Writer => can use it in Template.Execute to write story chapter to response body
+		if err != nil {
+			log.Printf("%v", err)
+			http.Error(w, "Something went wrong...", http.StatusInternalServerError)
+		}
+		return
+	}
+	http.Error(w, "Chapter not found.", http.StatusNotFound)
 }
 
 func JsonStory(r io.Reader) (Story, error) {
